@@ -147,7 +147,7 @@
         });
       var payload = { stops: cleaned };
       var returnTo = 'pebblejs://close#' + encodeURIComponent(JSON.stringify(payload));
-      document.location = returnTo;
+      windows.location = returnTo;
     });
 
     render();
