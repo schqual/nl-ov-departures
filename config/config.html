@@ -53,10 +53,17 @@
     var stops = [];
 
     try {
-      var params = new URLSearchParams(window.location.search);
-      var initial = params.get('stops');
-      if (initial) {
-        stops = JSON.parse(decodeURIComponent(initial));
+      var query = window.location.search.substring(1);
+      var params = {};
+      query.split('&').forEach(function (part) {
+        var item = part.split('=');
+        if (item.length === 2) {
+          params[item[0]] = decodeURIComponent(item[1]);
+        }
+      });
+    
+      if (params.stops) {
+        stops = JSON.parse(params.stops);
       }
     } catch (e) {
       stops = [];
