@@ -1,0 +1,48 @@
+name: Build Pebble app
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # TODO(untested, see README Todo list): this job has not yet been
+    # run for real. The rebble/pebble-sdk image tag and the exact
+    # location of the `pebble` binary inside it may need adjusting —
+    # that's what the "Diagnose pebble-tool" step below is for.
+    container:
+      image: rebble/pebble-sdk:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Diagnose pebble-tool
+        run: |
+          echo "PATH=$PATH"
+          which pebble || echo "pebble not on PATH — locate it manually:"
+          find / -iname 'pebble' -type f 2>/dev/null | head -20
+          pebble --version || true
+
+      - name: Install SDK (if needed)
+        run: |
+          # Some rebble/pebble-sdk image variants ship the SDK already
+          # activated; others need an explicit `pebble sdk install` /
+          # `pebble sdk activate`. Left as a no-op fallback if the
+          # diagnostic step above shows `pebble` is already usable.
+          pebble sdk list || true
+
+      - name: Build
+        run: |
+          pebble build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nl-ov-departures-pbw
+          path: build/*.pbw
+          if-no-files-found: error

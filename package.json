@@ -1,0 +1,39 @@
+{
+  "name": "nl-ov-departures",
+  "author": "Aleks",
+  "version": "1.0.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "NL OV Departures",
+    "uuid": "b1e2c3d4-5f6a-4b7c-8d9e-0f1a2b3c4d5e",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+
+    "//_targetPlatforms_NOTE": "TODO(unverified): 'emery' is the Pebble Time 2 platform key assumed for the currently installed pebble-tool. Run `pebble sdk list` / check pebble-tool release notes before first build; see README Todo list.",
+    "targetPlatforms": ["emery"],
+
+    "watchapp": {
+      "watchface": false
+    },
+
+    "messageKeys": [
+      "COUNT",
+      "ERROR",
+      "REQUEST_REFRESH",
+      "LINE_0", "DIR_0", "MIN_0",
+      "LINE_1", "DIR_1", "MIN_1",
+      "LINE_2", "DIR_2", "MIN_2",
+      "LINE_3", "DIR_3", "MIN_3",
+      "LINE_4", "DIR_4", "MIN_4"
+    ],
+
+    "resources": {
+      "media": []
+    },
+
+    "capabilities": ["configurable", "location"],
+    "projectType": "native"
+  }
+}

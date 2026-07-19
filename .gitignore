@@ -1,0 +1,6 @@
+build/
+.pebble-sdk-version.json
+node_modules/
+*.pbw
+.DS_Store
+*.log
