@@ -36,6 +36,11 @@ jobs:
           # diagnostic step above shows `pebble` is already usable.
           pebble sdk list || true
 
+      - name: Configure Pebble SDK
+        run: |
+          mkdir -p "$HOME/.pebble-sdk"
+          echo "" > "$HOME/.pebble-sdk/NO_TRACKING"
+
       - name: Build
         run: |
           pebble build
