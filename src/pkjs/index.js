@@ -241,63 +241,11 @@ function refresh() {
 // Keeping it inline avoids needing to host the config page externally,
 // which Pebble's showConfiguration flow would otherwise require.
 
-var CONFIG_HTML = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
-  '<meta name="viewport" content="width=device-width, initial-scale=1">' +
-  '<title>NL OV Departures</title><style>' +
-  'body{font-family:-apple-system,sans-serif;margin:0;padding:16px;background:#f4f4f4}' +
-  'h1{font-size:18px}.stop{background:#fff;border-radius:8px;padding:12px;margin-bottom:12px}' +
-  '.stop label{display:block;font-size:12px;color:#666;margin-top:8px}' +
-  '.stop input{width:100%;box-sizing:border-box;padding:6px;font-size:14px}' +
-  '.row{display:flex;gap:8px}.row input{flex:1}' +
-  'button{padding:10px 16px;font-size:14px;border-radius:6px;border:none;margin-top:8px}' +
-  '.btn-primary{background:#0060ff;color:#fff;width:100%}.btn-secondary{background:#ddd}' +
-  '.btn-danger{background:#ffe0e0;color:#a00}#add-stop-btn{width:100%}' +
-  '</style></head><body>' +
-  '<h1>Favourite stops</h1>' +
-  '<p>Add the stops you want NL OV Departures to consider. On each refresh the watch app ' +
-  'picks the 1-3 nearest to your phone and shows the soonest 5 departures across them.</p>' +
-  '<div id="stops"></div>' +
-  '<button id="add-stop-btn" class="btn-secondary">+ Add stop</button>' +
-  '<button id="save-btn" class="btn-primary">Save</button>' +
-  '<script>' +
-  'var stops = INITIAL_STOPS_PLACEHOLDER;' +
-  'function render(){' +
-  'var c=document.getElementById("stops");c.innerHTML="";' +
-  'stops.forEach(function(stop,i){' +
-  'var div=document.createElement("div");div.className="stop";' +
-  'div.innerHTML="<label>Name</label><input data-i=\\""+i+"\\" data-field=\\"name\\" value=\\""+(stop.name||"")+"\\">"+' +
-  '"<label>OVapi TimingPointCode(s), comma-separated</label><input data-i=\\""+i+"\\" data-field=\\"tpc\\" value=\\""+(stop.tpc||"")+"\\">"+' +
-  '"<div class=\\"row\\"><div style=\\"flex:1\\"><label>Latitude</label><input data-i=\\""+i+"\\" data-field=\\"lat\\" value=\\""+(stop.lat!=null?stop.lat:"")+"\\"></div>"+' +
-  '"<div style=\\"flex:1\\"><label>Longitude</label><input data-i=\\""+i+"\\" data-field=\\"lon\\" value=\\""+(stop.lon!=null?stop.lon:"")+"\\"></div></div>"+' +
-  '"<button class=\\"btn-secondary use-gps-btn\\" data-i=\\""+i+"\\">Use current GPS location</button> "+' +
-  '"<button class=\\"btn-danger remove-btn\\" data-i=\\""+i+"\\">Remove</button>";' +
-  'c.appendChild(div);});' +
-  'c.querySelectorAll("input").forEach(function(inp){inp.addEventListener("input",function(){' +
-  'var i=parseInt(inp.getAttribute("data-i"),10);var f=inp.getAttribute("data-field");stops[i][f]=inp.value;});});' +
-  'c.querySelectorAll(".remove-btn").forEach(function(btn){btn.addEventListener("click",function(){' +
-  'var i=parseInt(btn.getAttribute("data-i"),10);stops.splice(i,1);render();});});' +
-  'c.querySelectorAll(".use-gps-btn").forEach(function(btn){btn.addEventListener("click",function(){' +
-  'var i=parseInt(btn.getAttribute("data-i"),10);btn.textContent="Locating...";' +
-  'if(!navigator.geolocation){alert("Geolocation not available. Enter lat/lon manually.");btn.textContent="Use current GPS location";return;}' +
-  'navigator.geolocation.getCurrentPosition(function(pos){stops[i].lat=pos.coords.latitude;stops[i].lon=pos.coords.longitude;render();},' +
-  'function(err){alert("Could not get location ("+err.message+"). Enter lat/lon manually.");btn.textContent="Use current GPS location";},' +
-  '{enableHighAccuracy:true,timeout:10000});});});}' +
-  'document.getElementById("add-stop-btn").addEventListener("click",function(){stops.push({name:"",tpc:"",lat:"",lon:""});render();});' +
-  'document.getElementById("save-btn").addEventListener("click",function(){' +
-  'var cleaned=stops.filter(function(s){return s.name&&s.tpc&&s.lat!==""&&s.lon!=="";}).map(function(s){' +
-  'return{name:s.name,tpc:s.tpc,lat:parseFloat(s.lat),lon:parseFloat(s.lon)};});' +
-  'var payload={stops:cleaned};' +
-  'document.location="pebblejs://close#"+encodeURIComponent(JSON.stringify(payload));});' +
-  'render();' +
-  '<' + '/script></body></html>';
+var CONFIG_PAGE_URL = 'https://schqual.github.io/nl-ov-departures/config/config.html';
 
 function buildConfigUrl() {
   var favourites = loadFavourites();
-  var html = CONFIG_HTML.replace(
-    'INITIAL_STOPS_PLACEHOLDER',
-    JSON.stringify(favourites).replace(/</g, '\\u003c')
-  );
-  return 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+  return CONFIG_PAGE_URL + '?stops=' + encodeURIComponent(JSON.stringify(favourites));
 }
 
 // ---------------------------------------------------------------------

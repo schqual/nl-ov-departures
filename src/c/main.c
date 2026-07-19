@@ -23,7 +23,6 @@
 
 static Window *s_main_window;
 static MenuLayer *s_menu_layer;
-static TextLayer *s_status_layer; // shown only when there are 0 rows / an error
 
 static AppTimer *s_refresh_timer;
 
@@ -120,15 +119,15 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     snprintf(s_status_text, sizeof(s_status_text), "No departures");
   }
 
-  static const uint32_t line_keys[MAX_DEPARTURES] = {
+  const uint32_t line_keys[MAX_DEPARTURES] = {
     MESSAGE_KEY_LINE_0, MESSAGE_KEY_LINE_1, MESSAGE_KEY_LINE_2,
     MESSAGE_KEY_LINE_3, MESSAGE_KEY_LINE_4
   };
-  static const uint32_t dir_keys[MAX_DEPARTURES] = {
+  const uint32_t dir_keys[MAX_DEPARTURES] = {
     MESSAGE_KEY_DIR_0, MESSAGE_KEY_DIR_1, MESSAGE_KEY_DIR_2,
     MESSAGE_KEY_DIR_3, MESSAGE_KEY_DIR_4
   };
-  static const uint32_t min_keys[MAX_DEPARTURES] = {
+  const uint32_t min_keys[MAX_DEPARTURES] = {
     MESSAGE_KEY_MIN_0, MESSAGE_KEY_MIN_1, MESSAGE_KEY_MIN_2,
     MESSAGE_KEY_MIN_3, MESSAGE_KEY_MIN_4
   };
