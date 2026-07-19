@@ -21,21 +21,26 @@
 var STORAGE_KEY = 'nlOvDeparturesFavourites';
 var MAX_FAVOURITES_TO_QUERY = 3;
 var MAX_DEPARTURES_TO_SEND = 5;
-var OVAPI_BASE = 'https://v0.ovapi.nl/tpc/';
+var OVAPI_BASE = 'http://v0.ovapi.nl/tpc/';
 
 // ---------------------------------------------------------------------
 // Favourites storage
 // ---------------------------------------------------------------------
 
+var DEFAULT_FAVOURITES = [
+   { name: 'Liesveldviaduct', tpc: '31002471', lat: 0, lon: 0 }
+];
+
 function loadFavourites() {
   try {
     var raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    if (!raw) return DEFAULT_FAVOURITES;
     var parsed = JSON.parse(raw);
-    return Array.isArray(parsed.stops) ? parsed.stops : [];
+    var stops = Array.isArray(parsed.stops) ? parsed.stops : [];
+    return stops.length > 0 ? stops : DEFAULT_FAVOURITES;
   } catch (e) {
     console.log('loadFavourites: failed to parse stored favourites: ' + e);
-    return [];
+    return DEFAULT_FAVOURITES;
   }
 }
 
@@ -119,43 +124,77 @@ function fetchDeparturesForStop(stop, callback) {
   });
 }
 
-// OVapi's /tpc/{code} response is nested: { [tpc]: { [transportType]: { [journeyId]: {...} } } }
+function parseOvapiDate(dateString, referenceTimestamp) {
+  if (!dateString) return NaN;
+
+  // Get timezone offset from OVapi LastUpdateTimeStamp
+  // Example: 2026-07-19T15:43:06+0200
+  var offset = "+0100";
+
+  if (referenceTimestamp) {
+    var match = referenceTimestamp.match(/([+-]\d{4})$/);
+    if (match) {
+      offset = match[1];
+    }
+  }
+
+  // Add timezone offset
+  var iso = dateString + offset.substring(0, 3) + ":" + offset.substring(3);
+
+  return new Date(iso).getTime();
+}
+
+// OVapi's /tpc/{code} response is nested
 // Each journey has ExpectedArrivalTime / TargetArrivalTime, Destination info, LinePublicNumber.
 function parseOvapiResponse(data) {
   var departures = [];
   var now = Date.now();
 
-  Object.keys(data).forEach(function (tpc) {
-    var byType = data[tpc];
-    Object.keys(byType).forEach(function (transportType) {
-      var journeys = byType[transportType];
-      Object.keys(journeys).forEach(function (journeyId) {
-        var j = journeys[journeyId];
-        var etaString = j.ExpectedArrivalTime || j.TargetArrivalTime;
-        if (!etaString) return;
+  Object.keys(data).forEach(function (stopCode) {
+    var stop = data[stopCode];
 
-        var etaMs = new Date(etaString).getTime();
-        if (isNaN(etaMs)) return;
+    if (!stop.Passes) return;
 
-        var minutes = Math.round((etaMs - now) / 60000);
-        if (minutes < 0) minutes = 0;
+    Object.keys(stop.Passes).forEach(function (journeyId) {
+      var j = stop.Passes[journeyId];
 
-        departures.push({
-          line: j.LinePublicNumber || '?',
-          direction: j.DestinationName50 || j.DestinationName || '',
-          etaMs: etaMs,
-          minutes: minutes
-        });
+      var etaString = j.ExpectedArrivalTime || 
+                      j.ExpectedDepartureTime || 
+                      j.TargetArrivalTime;
+
+      if (!etaString) return;
+
+      // OVapi timestamps have no timezone, assume local time   
+      var etaMs = parseOvapiDate(
+        etaString,
+        j.LastUpdateTimeStamp
+      );
+      if (isNaN(etaMs)) return;
+      
+      console.log("OV time:", etaString, "parsed:", etaMs);
+
+      var minutes = Math.round((etaMs - now) / 60000);
+      if (minutes < 0) minutes = 0;
+
+      departures.push({
+        line: j.LinePublicNumber || '?',
+        direction: j.DestinationName50 || j.DestinationName || '',
+        transportType: j.TransportType || '',
+        operator: j.OperatorCode || '',
+        etaMs: etaMs,
+        minutes: minutes,
+        stopName: j.TimingPointName || '',
+        journeyNumber: j.JourneyNumber || ''
       });
     });
   });
 
-  return departures;
-}
+  // Sort by soonest departure
+  departures.sort(function (a, b) {
+    return a.etaMs - b.etaMs;
+  });
 
-function mergeAndSortDepartures(allDepartures) {
-  allDepartures.sort(function (a, b) { return a.etaMs - b.etaMs; });
-  return allDepartures.slice(0, MAX_DEPARTURES_TO_SEND);
+  return departures;
 }
 
 // ---------------------------------------------------------------------
@@ -201,7 +240,7 @@ function refresh() {
     return;
   }
 
-  navigator.geolocation.getCurrentPosition(
+/*  navigator.geolocation.getCurrentPosition(
     function (pos) {
       var lat = pos.coords.latitude;
       var lon = pos.coords.longitude;
@@ -230,6 +269,12 @@ function refresh() {
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
   );
+  */
+  
+  fetchDeparturesForStop(loadFavourites()[0], function(dep) {
+    console.log(JSON.stringify(dep));
+    sendDeparturesToWatch(dep);
+});
 }
 
 // ---------------------------------------------------------------------
